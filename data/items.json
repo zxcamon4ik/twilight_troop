@@ -1,0 +1,84 @@
+{
+  "items": [
+    {
+      "name": "Sword",
+      "attack": 5,
+      "defense": 0,
+      "slots": 1,
+      "range": 1,
+      "radius": 0
+    },
+    {
+      "name": "Shield",
+      "attack": 0,
+      "defense": 5,
+      "slots": 1,
+      "range": 0,
+      "radius": 0
+    },
+    {
+      "name": "Bow",
+      "attack": 3,
+      "defense": 0,
+      "slots": 2,
+      "range": 3,
+      "radius": 0
+    },
+    {
+      "name": "Staff",
+      "attack": 2,
+      "defense": 1,
+      "slots": 2,
+      "range": 2,
+      "radius": 1
+    },
+    {
+      "name": "Dagger",
+      "attack": 3,
+      "defense": 0,
+      "slots": 1,
+      "range": 1,
+      "radius": 0
+    },
+    {
+      "name": "Axe",
+      "attack": 6,
+      "defense": 0,
+      "slots": 2,
+      "range": 1,
+      "radius": 0
+    },
+    {
+      "name": "Spear",
+      "attack": 4,
+      "defense": 1,
+      "slots": 2,
+      "range": 2,
+      "radius": 0
+    },
+    {
+      "name": "Helmet",
+      "attack": 0,
+      "defense": 3,
+      "slots": 1,
+      "range": 0,
+      "radius": 0
+    },
+    {
+      "name": "Armor",
+      "attack": 0,
+      "defense": 6,
+      "slots": 2,
+      "range": 0,
+      "radius": 0
+    },
+    {
+      "name": "Magic Wand",
+      "attack": 4,
+      "defense": 0,
+      "slots": 1,
+      "range": 3,
+      "radius": 2
+    }
+  ]
+} 
