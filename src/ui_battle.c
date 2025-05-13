@@ -23,15 +23,16 @@
 
 // Function prototypes
 void init_battle_ui();
-void draw_grid(GameState* game_state, int cursor_x, int cursor_y);
+void draw_grid(GameState* g, int cx, int cy);
 void draw_cell(int y, int x, Cell* cell, int is_cursor);
 void draw_unit(int y, int x, Unit* unit);
 void draw_info_panel(GameState* game_state);
-void draw_battle_ui(GameState* game_state, int cursor_x, int cursor_y);
+void draw_battle_ui(GameState* g, int cx, int cy);
 void handle_battle_input(GameState* game_state, int* cursor_x, int* cursor_y);
 void show_action_menu(GameState* game_state, Unit* unit);
 void animate_attack(GameState* game_state, Unit* attacker, Unit* target);
 void show_movement_preview(GameState* game_state, Unit* unit, int new_x, int new_y);
+void run_battle(GameState* g);
 
 // Initialize the battle UI
 void init_battle_ui() {
@@ -49,194 +50,116 @@ void init_battle_ui() {
 
 // Draw a single cell of the grid
 void draw_cell(int y, int x, Cell* cell, int is_cursor) {
-    int start_y = y * CELL_HEIGHT + 1;
-    int start_x = x * CELL_WIDTH + 1;
-    int color_pair;
+    int sy = y * CELL_HEIGHT + 1, sx = x * CELL_WIDTH + 1;
     
-    // Determine the color of the cell based on its content and highlight
+    static const int terrain_colors[] = {COLOR_GRID_PLAIN, COLOR_GRID_FOREST, COLOR_GRID_MOUNTAIN};
+    int color = cell->unit ? 
+                (cell->unit->player_id == PLAYER_1 ? COLOR_PLAYER_1 : COLOR_PLAYER_2) :
+                cell->highlight == 1 ? COLOR_HIGHLIGHT_MOVE :
+                cell->highlight == 2 ? COLOR_HIGHLIGHT_ATTACK :
+                (cell->terrain_type < 3) ? terrain_colors[cell->terrain_type] : COLOR_GRID_PLAIN;
+    
+    attron(COLOR_PAIR(color));
+    
+    // Draw cell background
+    for (int i = 0; i < CELL_HEIGHT; i++)
+        for (int j = 0; j < CELL_WIDTH; j++)
+            mvaddch(sy + i, sx + j, ' ');
+    
+    // Draw unit if present
     if (cell->unit) {
-        if (cell->unit->player_id == PLAYER_1) {
-            color_pair = COLOR_PLAYER_1;
-        } else {
-            color_pair = COLOR_PLAYER_2;
-        }
-    } else {
-        switch (cell->highlight) {
-            case 1: color_pair = COLOR_HIGHLIGHT_MOVE; break;
-            case 2: color_pair = COLOR_HIGHLIGHT_ATTACK; break;
-            default:
-                switch (cell->terrain_type) {
-                    case 0: color_pair = COLOR_GRID_PLAIN; break;
-                    case 1: color_pair = COLOR_GRID_FOREST; break;
-                    case 2: color_pair = COLOR_GRID_MOUNTAIN; break;
-                    default: color_pair = COLOR_GRID_PLAIN;
-                }
-        }
+        static const char unit_chars[] = {'W', 'A', 'M', 'S', 'T'};
+        mvaddch(sy + 1, sx + 2, (cell->unit->type < NUM_UNIT_TYPES) ? 
+                unit_chars[cell->unit->type] : '?');
+        mvprintw(sy + 2, sx + 1, "%d", cell->unit->current_hp);
     }
     
-    // Draw the cell with the appropriate color
-    attron(COLOR_PAIR(color_pair));
-    
-    // Draw cell border
-    for (int i = 0; i < CELL_WIDTH; i++) {
-        mvaddch(start_y, start_x + i, ' ');
-        mvaddch(start_y + CELL_HEIGHT - 1, start_x + i, ' ');
-    }
-    
-    for (int i = 0; i < CELL_HEIGHT; i++) {
-        mvaddch(start_y + i, start_x, ' ');
-        mvaddch(start_y + i, start_x + CELL_WIDTH - 1, ' ');
-    }
-    
-    // Draw cell content
-    if (cell->unit) {
-        // Draw unit
-        char unit_char = ' ';
-        switch (cell->unit->type) {
-            case UNIT_TYPE_WARRIOR: unit_char = 'W'; break;
-            case UNIT_TYPE_ARCHER: unit_char = 'A'; break;
-            case UNIT_TYPE_MAGE: unit_char = 'M'; break;
-            case UNIT_TYPE_SCOUT: unit_char = 'S'; break;
-            case UNIT_TYPE_TANK: unit_char = 'T'; break;
-        }
-        mvaddch(start_y + 1, start_x + 2, unit_char);
-        
-        // Draw HP
-        char hp_str[3];
-        sprintf(hp_str, "%d", cell->unit->current_hp);
-        mvprintw(start_y + 2, start_x + 1, "%s", hp_str);
-    }
-    
-    // If this is the cursor position, highlight it
+    // Draw cursor
     if (is_cursor) {
         attron(A_BOLD);
-        for (int i = 0; i < CELL_WIDTH; i++) {
-            mvaddch(start_y, start_x + i, ACS_HLINE);
-            mvaddch(start_y + CELL_HEIGHT - 1, start_x + i, ACS_HLINE);
-        }
-        
-        for (int i = 0; i < CELL_HEIGHT; i++) {
-            mvaddch(start_y + i, start_x, ACS_VLINE);
-            mvaddch(start_y + i, start_x + CELL_WIDTH - 1, ACS_VLINE);
-        }
-        
-        // Draw corners
-        mvaddch(start_y, start_x, ACS_ULCORNER);
-        mvaddch(start_y, start_x + CELL_WIDTH - 1, ACS_URCORNER);
-        mvaddch(start_y + CELL_HEIGHT - 1, start_x, ACS_LLCORNER);
-        mvaddch(start_y + CELL_HEIGHT - 1, start_x + CELL_WIDTH - 1, ACS_LRCORNER);
+        mvhline(sy, sx, ACS_HLINE, CELL_WIDTH);
+        mvhline(sy + CELL_HEIGHT - 1, sx, ACS_HLINE, CELL_WIDTH);
+        mvvline(sy, sx, ACS_VLINE, CELL_HEIGHT);
+        mvvline(sy, sx + CELL_WIDTH - 1, ACS_VLINE, CELL_HEIGHT);
+        mvaddch(sy, sx, ACS_ULCORNER);
+        mvaddch(sy, sx + CELL_WIDTH - 1, ACS_URCORNER);
+        mvaddch(sy + CELL_HEIGHT - 1, sx, ACS_LLCORNER);
+        mvaddch(sy + CELL_HEIGHT - 1, sx + CELL_WIDTH - 1, ACS_LRCORNER);
         attroff(A_BOLD);
     }
     
-    attroff(COLOR_PAIR(color_pair));
+    attroff(COLOR_PAIR(color));
 }
 
 // Draw the entire grid
-void draw_grid(GameState* game_state, int cursor_x, int cursor_y) {
+void draw_grid(GameState* g, int cx, int cy) {
     clear();
     
-    // Draw grid coordinates
+    // Draw coordinates
     attron(COLOR_PAIR(COLOR_UI_TEXT));
-    for (int x = 0; x < GRID_WIDTH; x++) {
-        mvprintw(0, x * CELL_WIDTH + 3, "%d", x);
-    }
-    
-    for (int y = 0; y < GRID_HEIGHT; y++) {
-        mvprintw(y * CELL_HEIGHT + 2, 0, "%d", y);
-    }
+    for (int x=0; x<GRID_WIDTH; x++) mvprintw(0, x*CELL_WIDTH+3, "%d", x);
+    for (int y=0; y<GRID_HEIGHT; y++) mvprintw(y*CELL_HEIGHT+2, 0, "%d", y);
     attroff(COLOR_PAIR(COLOR_UI_TEXT));
     
-    // Draw each cell
-    for (int y = 0; y < GRID_HEIGHT; y++) {
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            draw_cell(y, x, &game_state->grid[y][x], (x == cursor_x && y == cursor_y));
-        }
-    }
+    // Draw cells
+    for (int y=0; y<GRID_HEIGHT; y++)
+        for (int x=0; x<GRID_WIDTH; x++)
+            draw_cell(y, x, &g->grid[y][x], (x==cx && y==cy));
 }
 
 // Draw the info panel
 void draw_info_panel(GameState* game_state) {
-    int panel_start_x = GRID_WIDTH * CELL_WIDTH + 3;
-    int panel_start_y = 1;
+    int px = GRID_WIDTH * CELL_WIDTH + 3, py = 1, h = GRID_HEIGHT * CELL_HEIGHT;
     
     // Draw panel border
     attron(COLOR_PAIR(COLOR_UI_TEXT) | A_BOLD);
-    mvaddch(panel_start_y, panel_start_x, ACS_ULCORNER);
-    mvaddch(panel_start_y, panel_start_x + INFO_PANEL_WIDTH, ACS_URCORNER);
-    mvaddch(panel_start_y + GRID_HEIGHT * CELL_HEIGHT, panel_start_x, ACS_LLCORNER);
-    mvaddch(panel_start_y + GRID_HEIGHT * CELL_HEIGHT, panel_start_x + INFO_PANEL_WIDTH, ACS_LRCORNER);
+    // Draw corners
+    mvaddch(py, px, ACS_ULCORNER); mvaddch(py, px + INFO_PANEL_WIDTH, ACS_URCORNER);
+    mvaddch(py+h, px, ACS_LLCORNER); mvaddch(py+h, px + INFO_PANEL_WIDTH, ACS_LRCORNER);
     
-    for (int i = 1; i < INFO_PANEL_WIDTH; i++) {
-        mvaddch(panel_start_y, panel_start_x + i, ACS_HLINE);
-        mvaddch(panel_start_y + GRID_HEIGHT * CELL_HEIGHT, panel_start_x + i, ACS_HLINE);
-    }
+    mvhline(py, px+1, ACS_HLINE, INFO_PANEL_WIDTH-1);
+    mvhline(py+h, px+1, ACS_HLINE, INFO_PANEL_WIDTH-1);
+    mvvline(py+1, px, ACS_VLINE, h-1);
+    mvvline(py+1, px+INFO_PANEL_WIDTH, ACS_VLINE, h-1);
     
-    for (int i = 1; i < GRID_HEIGHT * CELL_HEIGHT; i++) {
-        mvaddch(panel_start_y + i, panel_start_x, ACS_VLINE);
-        mvaddch(panel_start_y + i, panel_start_x + INFO_PANEL_WIDTH, ACS_VLINE);
-    }
+    // Draw title & divider
+    mvprintw(py+1, px+2, "BATTLE INFO");
+    mvaddch(py+2, px, ACS_LTEE);
+    mvhline(py+2, px+1, ACS_HLINE, INFO_PANEL_WIDTH-1);
+    mvaddch(py+2, px+INFO_PANEL_WIDTH, ACS_RTEE);
     
-    // Draw panel title
-    mvprintw(panel_start_y + 1, panel_start_x + 2, "BATTLE INFO");
-    mvaddch(panel_start_y + 2, panel_start_x, ACS_LTEE);
-    for (int i = 1; i < INFO_PANEL_WIDTH; i++) {
-        mvaddch(panel_start_y + 2, panel_start_x + i, ACS_HLINE);
-    }
-    mvaddch(panel_start_y + 2, panel_start_x + INFO_PANEL_WIDTH, ACS_RTEE);
+    // Draw player turn
+    mvprintw(py+4, px+2, "TURN: Player %d", game_state->current_player + 1);
     
-    // Draw current player turn
-    mvprintw(panel_start_y + 4, panel_start_x + 2, "TURN: Player %d", game_state->current_player + 1);
-    
-    // Draw selected unit info if any
+    // Draw selected unit info
     if (game_state->selected_unit) {
-        Unit* unit = game_state->selected_unit;
-        mvprintw(panel_start_y + 6, panel_start_x + 2, "SELECTED UNIT:");
-        mvprintw(panel_start_y + 7, panel_start_x + 2, "%s (Player %d)", unit->name, unit->player_id + 1);
-        mvprintw(panel_start_y + 8, panel_start_x + 2, "HP: %d/%d", unit->current_hp, unit->max_hp);
-        mvprintw(panel_start_y + 9, panel_start_x + 2, "Move Range: %d", unit->move_range);
-        mvprintw(panel_start_y + 10, panel_start_x + 2, "Attack Range: %d", unit->attack_range);
+        int l = py+6;
+        Unit* u = game_state->selected_unit;
         
-        // Display equipment
-        mvprintw(panel_start_y + 12, panel_start_x + 2, "EQUIPMENT:");
-        for (int i = 0; i < NUM_EQUIP_SLOTS; i++) {
-            if (unit->equipment[i]) {
-                const char* slot_name;
-                switch (i) {
-                    case EQUIP_WEAPON: slot_name = "Weapon"; break;
-                    case EQUIP_ARMOR: slot_name = "Armor"; break;
-                    case EQUIP_ACCESSORY: slot_name = "Accessory"; break;
-                    default: slot_name = "Unknown";
-                }
-                mvprintw(panel_start_y + 13 + i, panel_start_x + 2, "%s: %s", slot_name, unit->equipment[i]->name);
-            } else {
-                const char* slot_name;
-                switch (i) {
-                    case EQUIP_WEAPON: slot_name = "Weapon"; break;
-                    case EQUIP_ARMOR: slot_name = "Armor"; break;
-                    case EQUIP_ACCESSORY: slot_name = "Accessory"; break;
-                    default: slot_name = "Unknown";
-                }
-                mvprintw(panel_start_y + 13 + i, panel_start_x + 2, "%s: None", slot_name);
-            }
-        }
+        mvprintw(l++, px+2, "SELECTED UNIT:");
+        mvprintw(l++, px+2, "%s (Player %d)", u->name, u->player_id+1);
+        mvprintw(l++, px+2, "HP: %d/%d", u->current_hp, u->max_hp);
+        mvprintw(l++, px+2, "Move: %d  Attack: %d", u->move_range, u->attack_range);
+        
+        // Equipment
+        mvprintw(l+=2, px+2, "EQUIPMENT:");
+        if (u->equipment[EQUIP_WEAPON])
+            mvprintw(++l, px+2, "Weapon: %s", u->equipment[EQUIP_WEAPON]->name);
+        if (u->equipment[EQUIP_ARMOR])
+            mvprintw(++l, px+2, "Armor: %s", u->equipment[EQUIP_ARMOR]->name);
+        if (u->equipment[EQUIP_ACCESSORY])
+            mvprintw(++l, px+2, "Acc: %s", u->equipment[EQUIP_ACCESSORY]->name);
     }
     
-    // Draw game status message
-    mvprintw(panel_start_y + GRID_HEIGHT * CELL_HEIGHT - 5, panel_start_x + 2, "%s", game_state->status_message);
-    
-    // Draw controls help
-    mvprintw(panel_start_y + GRID_HEIGHT * CELL_HEIGHT - 4, panel_start_x + 2, "Move: Arrow keys");
-    mvprintw(panel_start_y + GRID_HEIGHT * CELL_HEIGHT - 3, panel_start_x + 2, "Select: Enter, Back: Esc");
-    mvprintw(panel_start_y + GRID_HEIGHT * CELL_HEIGHT - 2, panel_start_x + 2, "Attack auto-ends turn!");
-    mvprintw(panel_start_y + GRID_HEIGHT * CELL_HEIGHT - 1, panel_start_x + 2, "Quit: Q, Save: S, Load: L");
-    
+    // Status message
+    mvprintw(py+h-2, px+2, "%.40s", game_state->status_message);
     attroff(COLOR_PAIR(COLOR_UI_TEXT) | A_BOLD);
 }
 
 // Draw the complete battle UI
-void draw_battle_ui(GameState* game_state, int cursor_x, int cursor_y) {
-    draw_grid(game_state, cursor_x, cursor_y);
-    draw_info_panel(game_state);
+void draw_battle_ui(GameState* g, int cx, int cy) {
+    draw_grid(g, cx, cy);
+    draw_info_panel(g);
     refresh();
 }
 
@@ -411,24 +334,22 @@ void handle_battle_input(GameState* game_state, int* cursor_x, int* cursor_y) {
 // Show action menu for a unit
 void show_action_menu(GameState* game_state, Unit* unit) {
     // Clear the existing status message area
-    int panel_start_x = GRID_WIDTH * CELL_WIDTH + 3;
-    int panel_start_y = 1 + GRID_HEIGHT * CELL_HEIGHT - 8; // Extended for more options
+    int px = GRID_WIDTH * CELL_WIDTH + 3;
+    int py = 1 + GRID_HEIGHT * CELL_HEIGHT - 8; // Extended for more options
     
     attron(COLOR_PAIR(COLOR_UI_TEXT));
     
     // Show action options
-    mvprintw(panel_start_y, panel_start_x + 2, "----- ACTIONS -----");
-    mvprintw(panel_start_y + 1, panel_start_x + 2, "1. Attack (auto-ends turn)");
-    mvprintw(panel_start_y + 2, panel_start_x + 2, "2. Skip (keep unit selected)");
-    mvprintw(panel_start_y + 3, panel_start_x + 2, "3. End Turn");
-    mvprintw(panel_start_y + 4, panel_start_x + 2, "ESC: Go Back");
+    mvprintw(py, px + 2, "----- ACTIONS -----");
+    mvprintw(py + 1, px + 2, "1. Attack (auto-ends turn)");
+    mvprintw(py + 2, px + 2, "2. Skip (keep unit selected)");
+    mvprintw(py + 3, px + 2, "3. End Turn");
+    mvprintw(py + 4, px + 2, "ESC: Go Back");
     
     attroff(COLOR_PAIR(COLOR_UI_TEXT));
     
     // Wait for action selection
-    int ch = getch();
-    
-    switch (ch) {
+    switch (getch()) {
         case '1': // Attack
             game_state->turn_state = TURN_STATE_SELECT_TARGET;
             clear_highlights(game_state);
@@ -445,7 +366,7 @@ void show_action_menu(GameState* game_state, Unit* unit) {
             
         case '3': // End turn
             sprintf(game_state->status_message, "Turn ended. Player %d's turn now", 
-                   (game_state->current_player == PLAYER_1) ? 2 : 1);
+                  (game_state->current_player == PLAYER_1) ? 2 : 1);
             end_turn(game_state);
             refresh();
             napms(1000); // Pause for 1 second to show turn switch message
@@ -457,130 +378,82 @@ void show_action_menu(GameState* game_state, Unit* unit) {
             highlight_movement_range(game_state, game_state->selected_unit);
             sprintf(game_state->status_message, "Select where to move");
             break;
-            
-        default:
-            // Stay in the same state if invalid key pressed
-            break;
     }
 }
 
 // Animate an attack between units
 void animate_attack(GameState* game_state, Unit* attacker, Unit* target) {
-    // Check for NULL pointers
-    if (!game_state || !attacker || !target) {
+    if (!game_state || !attacker || !target || 
+        target->x < 0 || target->x >= GRID_WIDTH || 
+        target->y < 0 || target->y >= GRID_HEIGHT)
         return;
-    }
     
-    // Make sure the target has valid coordinates
-    if (target->x < 0 || target->x >= GRID_WIDTH || target->y < 0 || target->y >= GRID_HEIGHT) {
-        return;
-    }
+    int sy = target->y * CELL_HEIGHT + 1, sx = target->x * CELL_WIDTH + 1;
     
-    // Flash the target cell a few times
     for (int i = 0; i < 3; i++) {
-        // Highlight the target
         attron(COLOR_PAIR(COLOR_HIGHLIGHT_ATTACK) | A_BOLD);
         
-        int start_y = target->y * CELL_HEIGHT + 1;
-        int start_x = target->x * CELL_WIDTH + 1;
+        // Flash cell
+        for (int y = 0; y < CELL_HEIGHT; y++)
+            for (int x = 0; x < CELL_WIDTH; x++)
+                mvaddch(sy + y, sx + x, ' ');
         
-        for (int y = 0; y < CELL_HEIGHT; y++) {
-            for (int x = 0; x < CELL_WIDTH; x++) {
-                mvaddch(start_y + y, start_x + x, ' ');
-            }
-        }
-        
-        // Draw damage indication
-        mvprintw(start_y + 1, start_x + 1, "HIT!");
-        
+        mvprintw(sy + 1, sx + 1, "HIT!");
         attroff(COLOR_PAIR(COLOR_HIGHLIGHT_ATTACK) | A_BOLD);
+        refresh(); napms(200);
         
-        refresh();
-        napms(200); // Flash for 200ms
-        
-        // Redraw the normal cell - safely check if the cell is valid
-        if (target->y >= 0 && target->y < GRID_HEIGHT && 
-            target->x >= 0 && target->x < GRID_WIDTH) {
-            draw_cell(target->y, target->x, &game_state->grid[target->y][target->x], 0);
-        }
-        refresh();
-        napms(200); // Pause for 200ms
+        // Redraw normal cell
+        draw_cell(target->y, target->x, &game_state->grid[target->y][target->x], 0);
+        refresh(); napms(200);
     }
 }
 
 // Run the battle phase
-void run_battle(GameState* game_state) {
-    // Check if terminal is large enough for battle UI
-    int max_y, max_x;
-    getmaxyx(stdscr, max_y, max_x);
+void run_battle(GameState* g) {
+    // Check terminal size
+    int my, mx, min_w = GRID_WIDTH*CELL_WIDTH+INFO_PANEL_WIDTH+5, min_h = GRID_HEIGHT*CELL_HEIGHT+2;
+    getmaxyx(stdscr, my, mx);
     
-    // Calculate minimum required size
-    int min_width = GRID_WIDTH * CELL_WIDTH + INFO_PANEL_WIDTH + 5;
-    int min_height = GRID_HEIGHT * CELL_HEIGHT + 2;
-    
-    if (max_y < min_height || max_x < min_width) {
-        clear();
-        attron(A_BOLD);
+    if (my < min_h || mx < min_w) {
+        clear(); attron(A_BOLD);
         mvprintw(1, 1, "Terminal window too small for battle display!");
-        mvprintw(3, 1, "Please resize your terminal to at least %dx%d characters", min_width, min_height);
+        mvprintw(3, 1, "Please resize to at least %dx%d characters", min_w, min_h);
         mvprintw(5, 1, "Press any key to return to main menu...");
-        attroff(A_BOLD);
-        refresh();
-        getch();
-        
-        // Return to main menu
-        game_state->current_phase = PHASE_MAIN_MENU;
+        attroff(A_BOLD); refresh(); getch();
+        g->current_phase = PHASE_MAIN_MENU;
         return;
     }
     
-    // Initialize battle UI
+    // Initialize
     init_battle_ui();
+    int cx = GRID_WIDTH/2, cy = GRID_HEIGHT/2;
     
-    // Set up cursor position
-    int cursor_x = GRID_WIDTH / 2;
-    int cursor_y = GRID_HEIGHT / 2;
+    g->current_phase = PHASE_BATTLE;
+    g->turn_state = TURN_STATE_SELECT_UNIT;
+    g->current_player = PLAYER_1;
+    g->selected_unit = NULL;
+    sprintf(g->status_message, "Player %d's turn", g->current_player+1);
     
-    // Initialize game state for battle
-    game_state->current_phase = PHASE_BATTLE;
-    game_state->turn_state = TURN_STATE_SELECT_UNIT;
-    game_state->current_player = PLAYER_1;
-    game_state->selected_unit = NULL;
-    sprintf(game_state->status_message, "Player %d's turn", game_state->current_player + 1);
-    
-    // Main battle loop
+    // Main loop
     while (1) {
-        draw_battle_ui(game_state, cursor_x, cursor_y);
-        handle_battle_input(game_state, &cursor_x, &cursor_y);
+        draw_battle_ui(g, cx, cy);
+        handle_battle_input(g, &cx, &cy);
         
-        // Check for game over conditions
-        int player1_units = 0, player2_units = 0;
+        // Check for game over
+        int alive[2] = {0};
+        for (int p=0; p<NUM_PLAYERS; p++)
+            for (int i=0; i<g->num_units[p]; i++)
+                if (g->player_units[p][i].is_active) alive[p]++;
         
-        for (int i = 0; i < game_state->num_units[PLAYER_1]; i++) {
-            if (game_state->player_units[PLAYER_1][i].is_active) {
-                player1_units++;
-            }
-        }
-        
-        for (int i = 0; i < game_state->num_units[PLAYER_2]; i++) {
-            if (game_state->player_units[PLAYER_2][i].is_active) {
-                player2_units++;
-            }
-        }
-        
-        if (player1_units == 0 || player2_units == 0) {
-            game_state->current_phase = PHASE_GAME_OVER;
-            int winner = (player1_units > 0) ? PLAYER_1 : PLAYER_2;
-            
-            clear();
-            attron(COLOR_PAIR(COLOR_UI_TEXT) | A_BOLD);
-            mvprintw(LINES / 2, (COLS - 20) / 2, "GAME OVER");
-            mvprintw(LINES / 2 + 1, (COLS - 30) / 2, "Player %d wins!", winner + 1);
-            mvprintw(LINES / 2 + 3, (COLS - 30) / 2, "Press any key to continue...");
-            attroff(COLOR_PAIR(COLOR_UI_TEXT) | A_BOLD);
-            refresh();
-            
-            getch();
-            break;
+        if (!alive[0] || !alive[1]) {
+            int w = alive[0] ? PLAYER_1 : PLAYER_2;
+            clear(); attron(COLOR_PAIR(COLOR_UI_TEXT)|A_BOLD);
+            mvprintw(LINES/2, (COLS-20)/2, "GAME OVER");
+            mvprintw(LINES/2+1, (COLS-30)/2, "Player %d wins!", w+1);
+            mvprintw(LINES/2+3, (COLS-30)/2, "Press any key to continue...");
+            attroff(COLOR_PAIR(COLOR_UI_TEXT)|A_BOLD); refresh();
+            g->current_phase = PHASE_GAME_OVER;
+            getch(); break;
         }
     }
 }

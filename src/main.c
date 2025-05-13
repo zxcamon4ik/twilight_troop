@@ -16,33 +16,12 @@
 // This variable is now used to store the number of items, which is fixed at NUMBER_OF_ITEMS
 int item_count = NUMBER_OF_ITEMS;
 
-void remove_white_spaces(char *goida) {
-    int j = 0;
-    for (int i = 0; goida[i] != '\0'; i++) {
-        if (!isspace(goida[i])) {
-            goida[j++] = goida[i];
-        }
-    }
-    goida[j] = '\0';
-}
+void remove_white_spaces(char *s){int j=0;for(int i=0;s[i];i++)if(!isspace(s[i]))s[j++]=s[i];s[j]=0;}
+int check_is_num(char *v){for(int i=0;v[i];i++)if(!isdigit(v[i]))return 1;return 0;}
 
-int check_is_num(char *value) {
-    int value_len = strlen(value);
-    for (int i = 0; i < value_len; i++) {
-        if (!isdigit(value[i])) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-void print_item(const Item *item) {
-    printf("Name: %s\n", item->name);
-    printf("Attack: %d\n", item->att);
-    printf("Defense: %d\n", item->def);
-    printf("Slots: %d\n", item->slots);
-    printf("Range: %d\n", item->range);
-    printf("Radius: %d\n", item->radius);
+void print_item(const Item *i) {
+    printf("Name: %s\nAttack: %d\nDefense: %d\nSlots: %d\nRange: %d\nRadius: %d\n", 
+           i->name, i->att, i->def, i->slots, i->range, i->radius);
 }
 
 // Function to print all available items
@@ -53,141 +32,83 @@ void print_items() {
     }
 }
 
-void print_item_arena(const char *label, const Item *item) {
-    if (item) {
-        printf("    %s: %s,%d,%d,%d,%d,%d\n", label,
-               item->name,
-               item->att,
-               item->def,
-               item->slots,
-               item->range,
-               item->radius);
-    }
+void print_item_arena(const char *l, const Item *i) {
+    if (i) printf("    %s: %s,%d,%d,%d,%d,%d\n", l, i->name, i->att, i->def, i->slots, i->range, i->radius);
 }
 
-void print_arena(Unit *army0, Unit *army1) {
+void print_arena(Unit *a0, Unit *a1) {
     printf("Army 1\n");
-    for (int i = 0; i < MAX_ARMY; i++) {
-        if (army0[i].name[0] == '\0') break;
-        printf("    Unit: %d\n", i);
-        printf("    Name: %s\n", army0[i].name);
-        printf("    HP: %d\n", army0[i].current_hp);
-        print_item_arena("Item 1", army0[i].equipment[EQUIP_WEAPON]);
-        print_item_arena("Item 2", army0[i].equipment[EQUIP_ARMOR]);
-		printf("\n");
-	}
+    for (int i = 0; i < MAX_ARMY && a0[i].name[0]; i++) {
+        printf("    Unit: %d\n    Name: %s\n    HP: %d\n", i, a0[i].name, a0[i].current_hp);
+        print_item_arena("Item 1", a0[i].equipment[EQUIP_WEAPON]);
+        print_item_arena("Item 2", a0[i].equipment[EQUIP_ARMOR]);
+        printf("\n");
+    }
 
     printf("Army 2\n");
-    for (int i = 0; i < MAX_ARMY; i++) {
-        if (army1[i].name[0] == '\0') break;
-        printf("    Unit: %d\n", i);
-        printf("    Name: %s\n", army1[i].name);
-        printf("    HP: %d\n", army1[i].current_hp);
-        print_item_arena("Item 1", army1[i].equipment[EQUIP_WEAPON]);
-        print_item_arena("Item 2", army1[i].equipment[EQUIP_ARMOR]);
-		printf("\n");
-	}
+    for (int i = 0; i < MAX_ARMY && a1[i].name[0]; i++) {
+        printf("    Unit: %d\n    Name: %s\n    HP: %d\n", i, a1[i].name, a1[i].current_hp);
+        print_item_arena("Item 1", a1[i].equipment[EQUIP_WEAPON]);
+        print_item_arena("Item 2", a1[i].equipment[EQUIP_ARMOR]);
+        printf("\n");
+    }
 }
 
 void load_army(Unit *army, char *armada) {
-    FILE *armyf = fopen(armada, "r");
+    FILE *f = fopen(armada, "r");
+    if (!f) {fprintf(stderr, "%s\n", ERR_FILE); exit(0);}
 
-    if (armyf == NULL) {
-        fprintf(stderr, "%s\n", ERR_FILE);
-        exit(0);
-    }
+    char buf[MAX_LINE + 1];
+    if (!fgets(buf, sizeof(buf), f)) {fprintf(stderr, "%s\n", ERR_UNIT_COUNT); fclose(f); exit(0);}
 
-    char buffer[MAX_LINE + 1];
+    int qty = atoi(buf);
+    if (qty < 1 || qty > MAX_ARMY) {fprintf(stderr, "%s\n", ERR_UNIT_COUNT); fclose(f); exit(0);}
 
-    if (!fgets(buffer, sizeof(buffer), armyf)) {
-        fprintf(stderr, "%s\n", ERR_UNIT_COUNT);
-        fclose(armyf);
-        exit(0);
-    }
+    for (int i = 0; i < qty; i++) {
+        if (!fgets(buf, sizeof(buf), f)) {fprintf(stderr, "%s\n", ERR_ITEM_COUNT); fclose(f); exit(0);}
 
-    int quantity = atoi(buffer);
-    if (!(1 <= quantity && quantity <= MAX_ARMY)) {
-        fprintf(stderr, "%s\n", ERR_UNIT_COUNT);
-        fclose(armyf);
-        exit(0);
-    }
-
-    for (int i = 0; i < quantity; i++) {
-        if (!fgets(buffer, sizeof(buffer), armyf)) {
-            fprintf(stderr, "%s\n", ERR_ITEM_COUNT);
-            fclose(armyf);
-            exit(0);
-        }
-
-        char *name = NULL;
-        char *item1 = NULL;
-        char *item2 = NULL;
-
-        int token_counter = 0;
-        char *token = strtok(buffer, " \t\r\n");
-        while (token != NULL) {
-            if (token_counter == 0) name = token;
-            else if (token_counter == 1) item1 = token;
-            else if (token_counter == 2) item2 = token;
-            token_counter++;
+        char *name = NULL, *item1 = NULL, *item2 = NULL;
+        int tc = 0;
+        char *token = strtok(buf, " \t\r\n");
+        
+        while (token) {
+            if (tc == 0) name = token;
+            else if (tc == 1) item1 = token;
+            else if (tc == 2) item2 = token;
             token = strtok(NULL, " \t\r\n");
+            tc++;
         }
 
-        if (token_counter < 2 || token_counter > 3) {
-            fprintf(stderr, "%s\n", ERR_ITEM_COUNT);
-            fclose(armyf);
-            exit(0);
-        }
+        if (tc < 2 || tc > 3) {fprintf(stderr, "%s\n", ERR_ITEM_COUNT); fclose(f); exit(0);}
 
         strcpy(army[i].name, name);
         army[i].name[MAX_NAME] = '\0';
 
-        const Item *found1 = NULL;
-        const Item *found2 = NULL;
-
+        const Item *found1 = NULL, *found2 = NULL;
         for (int j = 0; j < item_count; j++) {
             if (strcmp(item1, items[j].name) == 0) found1 = &items[j];
             if (item2 && strcmp(item2, items[j].name) == 0) found2 = &items[j];
         }
 
-        if (!found1 || (item2 && !found2)) {
-            fprintf(stderr, "%s\n", ERR_WRONG_ITEM);
-            fclose(armyf);
-            exit(0);
-        }
+        if (!found1 || (item2 && !found2)) {fprintf(stderr, "%s\n", ERR_WRONG_ITEM); fclose(f); exit(0);}
 
         army[i].equipment[EQUIP_WEAPON] = (Item*)found1;
-        if (found2) {
-            army[i].equipment[EQUIP_ARMOR] = (Item*)found2;
-        } else {
-            army[i].equipment[EQUIP_ARMOR] = NULL;
-        }
+        army[i].equipment[EQUIP_ARMOR] = found2 ? (Item*)found2 : NULL;
         army[i].equipment[EQUIP_ACCESSORY] = NULL;
 
-        int slots = 0;
-        if (found1) slots += found1->slots;
-        if (found2) slots += found2->slots;
+        int slots = (found1 ? found1->slots : 0) + (found2 ? found2->slots : 0);
+        if (slots > 2) {fprintf(stderr, "%s\n", ERR_SLOTS); fclose(f); exit(0);}
 
-        if (slots > 2) {
-            fprintf(stderr, "%s\n", ERR_SLOTS);
-            fclose(armyf);
-            exit(0);
-        }
-
-        army[i].current_hp = 100;
-        army[i].max_hp = 100;
-        
-        // Initialize other Unit properties
-        army[i].type = UNIT_TYPE_WARRIOR; // Default type
-        army[i].move_range = 3;           // Default move range
-        army[i].attack_range = 1;         // Default attack range
-        army[i].player_id = 0;            // Default to player 1
-        army[i].is_active = 1;            // Unit is active
-        army[i].x = -1;                   // Position will be set during placement
-        army[i].y = -1;
+        // Initialize unit properties
+        army[i].current_hp = army[i].max_hp = 100;
+        army[i].type = UNIT_TYPE_WARRIOR;
+        army[i].move_range = 3;
+        army[i].attack_range = 1;
+        army[i].player_id = 0;
+        army[i].is_active = 1;
+        army[i].x = army[i].y = -1;
     }
-
-    fclose(armyf);
+    fclose(f);
 }
 
 // Function prototypes
@@ -195,7 +116,6 @@ void game_loop();
 void handle_main_menu(GameState* game_state);
 
 int main() {
-    // Seed the random number generator
     srand(time(NULL));
     
     // Initialize ncurses
@@ -203,19 +123,11 @@ int main() {
     cbreak();
     noecho();
     keypad(stdscr, TRUE);
-    curs_set(0);  // Hide cursor
+    curs_set(0);
+    if (has_colors()) start_color();
     
-    // Initialize colors if terminal supports them
-    if (has_colors()) {
-        start_color();
-    }
-    
-    // Run the game loop
     game_loop();
-    
-    // Clean up ncurses
     endwin();
-    
     return 0;
 }
 
@@ -232,17 +144,13 @@ void game_loop() {
                 break;
                 
             case PHASE_UNIT_SELECTION:
-                if (!run_unit_selection(&game_state)) {
-                    // If unit selection fails for some reason, go back to main menu
+                if (!run_unit_selection(&game_state))
                     game_state.current_phase = PHASE_MAIN_MENU;
-                }
                 break;
                 
             case PHASE_UNIT_PLACEMENT:
-                if (!run_unit_placement(&game_state)) {
-                    // If unit placement fails for some reason, go back to unit selection
+                if (!run_unit_placement(&game_state))
                     game_state.current_phase = PHASE_UNIT_SELECTION;
-                }
                 break;
                 
             case PHASE_BATTLE:
