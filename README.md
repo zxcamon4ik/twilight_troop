@@ -1,60 +1,48 @@
-# Twilight Troop: Tactical Battle Game
-
-![C Build](https://github.com/username/twilight_troop/actions/workflows/c-build.yml/badge.svg)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# Twilight Troop
 
 A turn-based tactical battle game built with ncurses in C, featuring unit management, combat mechanics, and interactive gameplay.
-
-![Tactical Battle Game](https://via.placeholder.com/800x400?text=Twilight+Troop+Screenshot)
 
 ## Overview
 
 Twilight Troop is a tactical battle game where players strategically deploy different unit types with unique equipment combinations. The game features turn-based combat on a grid system using Manhattan distance for movement and attacks.
 
-## Features
+## Key Features
 
-- **Unit Selection & Equipment System**: Choose from 5 unique unit types (Warrior, Archer, Mage, Scout, Tank) and equip them with various weapons and armor
-- **Dynamic Placement Phase**: Place your units strategically on the battlefield before combat begins
-- **Turn-based Tactical Combat**: Move and attack with your units on a grid using Manhattan distance mechanics
-- **Save/Load System**: Save your game progress and continue later
-- **Full-color ncurses UI**: Colorful interface with menus, grid representation, and animated combat feedback
-- **In-game Help**: Comprehensive tutorial and help system
+- **Tactical Turn-Based Combat** - Grid-based movement with Manhattan distance calculations
+- **5 Unique Unit Types** - Each with different strengths and abilities
+- **Equipment System** - Customize units with weapons and armor
+- **Interactive Placement** - Strategic unit positioning before battle
+- **ncurses UI** - Full-color terminal interface with intuitive controls
+- **Save/Load System** - Continue your battles later
 
 ## Game Mechanics
 
 ### Unit Types
-- **Warrior**: Balanced unit with medium attack and defense
-- **Archer**: Ranged unit with high attack but low defense
-- **Mage**: Powerful area-effect spellcaster with high damage radius but fragile defense
-- **Scout**: Fast unit with extended movement range
-- **Tank**: High HP and defense, but lower attack power
+- **Warrior** - Balanced unit with medium attack and defense
+- **Archer** - Ranged unit with high attack but low defense
+- **Mage** - Area-effect spellcaster with high damage radius
+- **Scout** - Fast unit with extended movement range
+- **Tank** - High HP and defense, lower attack power
 
-### Equipment System
-Equipment items modify unit stats in the following ways:
-- **Attack**: Increases damage dealt to opponents
-- **Defense**: Reduces damage taken
-- **Slots**: Each unit has 2 equipment slots maximum
-- **Range**: Determines attack distance (Manhattan)
-- **Radius**: Determines area-of-effect for attacks
+### Equipment
+Items modify your units' capabilities:
+- **Attack** - Increases damage dealt
+- **Defense** - Reduces damage taken
+- **Range** - Determines attack distance
+- **Radius** - Controls area-of-effect for attacks
 
 ## Installation
 
-### Prerequisites
+### Requirements
 - GCC compiler
 - ncurses library
 
-### Linux/Unix
+### Build Instructions
 ```bash
-# Install ncurses if not already installed
+# Install ncurses
 sudo apt-get install libncurses5-dev  # Debian/Ubuntu
 # OR
-sudo yum install ncurses-devel        # CentOS/RHEL
-# OR
 sudo pacman -S ncurses                # Arch Linux
-
-# Clone the repository
-git clone https://github.com/username/twilight_troop.git
-cd twilight_troop
 
 # Build the game
 make
@@ -65,45 +53,40 @@ make run
 
 ## Controls
 
-- **Arrow Keys**: Move cursor/selected unit
-- **Enter**: Select/Confirm
-- **Escape**: Cancel/Back
-- **H**: Show help screen
-- **S**: Save game
-- **L**: Load game
-- **E**: End turn (during battle)
-- **Q**: Quit game
+- **Arrow Keys** - Move cursor/unit
+- **Enter** - Select/Confirm
+- **Escape** - Cancel/Back
+- **H** - Help screen
+- **S** - Save game
+- **L** - Load game
+- **E** - End turn
+- **Q** - Quit game
 
-## Game Flow
+## Project Structure
 
-1. **Main Menu**: Choose to start a new game, load a saved game, view help, or exit
-2. **Unit Selection**: Choose and equip your units for battle
-3. **Unit Placement**: Position your units on the battlefield
-4. **Battle Phase**: Take turns moving and attacking with your units
-5. **Game Over**: Victory screen when one player defeats all enemy units
-
-## Development
-
-This project demonstrates skills in:
-- C programming with data structures
-- Game state management
-- Turn-based game mechanics
-- UI development with ncurses
-- File I/O for save/load functionality
+```
+twilight_troop/
+├── bin/                # Compiled binaries
+├── data/               # Game data files
+│   ├── army1.txt       # Sample army configuration
+│   ├── army2.txt       # Sample army configuration
+│   ├── items.json      # Equipment definitions
+│   ├── items.txt       # Alternative item format
+│   └── unit_types.txt  # Unit type definitions
+├── docs/               # Documentation
+├── obj/                # Object files
+└── src/                # Source code
+    ├── game_logic.c    # Core game mechanics
+    ├── game_state.h    # Game state definitions
+    ├── main.c          # Entry point
+    ├── ui_*.c/h        # User interface components
+    └── ...
+```
 
 ## Documentation
 
-For more detailed documentation, see the [docs](docs/) directory.
+For presentation materials and architectural diagrams, see the [docs](docs/) directory.
 
-## Contributing
+## Screenshots
 
-Contributions are welcome! Please see our [Contributing Guidelines](CONTRIBUTING.md) for more information.
-
-## License
-
-[MIT License](LICENSE)
-
-## Acknowledgments
-
-- Thanks to all contributors and testers
-- Inspired by classic tactical games like Final Fantasy Tactics and Advance Wars
+*Screenshots coming soon*
