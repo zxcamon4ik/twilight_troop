@@ -7,11 +7,11 @@
 // Array of predefined items
 Item items[NUMBER_OF_ITEMS] = {
     // Weapons
-    {"Sword", 5, 0, 1, 1, 0},
-    {"Bow", 4, 0, 1, 4, 0},
-    {"Staff", 3, 2, 1, 2, 1},
-    {"Dagger", 3, 0, 1, 1, 0},
-    {"Axe", 6, 0, 2, 1, 0},
+    {"Sword", 13, 0, 1, 1, 0},
+    {"Bow", 15, 0, 1, 4, 0},
+    {"Staff", 16, 2, 1, 2, 1},
+    {"Dagger", 13, 0, 1, 1, 0},
+    {"Axe", 15, 0, 2, 1, 0},
     
     // Armor
     {"Leather", 0, 3, 1, 0, 0},

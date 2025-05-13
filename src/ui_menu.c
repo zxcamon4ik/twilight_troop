@@ -46,8 +46,8 @@ static const char* robot_art[] = {
     "         /UU/    |H\\__\\    HHHH|   \\\\",
     "         |UU/    |H\\  |HHHHHHH|    |\\\\\\",
     "         UU      |HH\\ \\HHHHHHH|    | \\\\\\",
-    "         U       |<_\\,_\\HHHHHH|   /  \\\\\\",
-    "          \\ (    |HHHHHHHHHHHHH   /  \\\\\\\\",
+    "         U       |<_\\,_\\HHHHHH|   /  \\\\\\\\",
+    "          \\ (    |HHHHHHHHHHHHH   /  \\\\\\\\\\",
     "           \\ \\   |=============  /    \\\\\\\\\\",
     "              \\ |             | |         "
 };

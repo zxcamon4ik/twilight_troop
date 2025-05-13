@@ -281,6 +281,28 @@ void handle_placement_input(GameState* game_state, int* cursor_x, int* cursor_y,
 
 // Run the unit placement phase
 int run_unit_placement(GameState* game_state) {
+    // Check if terminal is large enough for placement UI
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+    
+    // Calculate minimum required size (similar to battle UI)
+    int min_width = GRID_WIDTH * CELL_WIDTH + 5;
+    int min_height = GRID_HEIGHT * CELL_HEIGHT + 2;
+    
+    if (max_y < min_height || max_x < min_width) {
+        clear();
+        attron(A_BOLD);
+        mvprintw(1, 1, "Terminal window too small for unit placement!");
+        mvprintw(3, 1, "Please resize your terminal to at least %dx%d characters", min_width, min_height);
+        mvprintw(5, 1, "Press any key to return to main menu...");
+        attroff(A_BOLD);
+        refresh();
+        getch();
+        
+        // Return to main menu
+        return 0;
+    }
+    
     int cursor_x = GRID_WIDTH / 2;
     int cursor_y = 0; // Start at top for Player 1
     int current_player = PLAYER_1;

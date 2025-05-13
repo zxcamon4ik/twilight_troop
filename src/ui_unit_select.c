@@ -351,6 +351,28 @@ void handle_unit_select_input(UnitSelectionMenu* menu, GameState* game_state) {
 
 // Run the unit selection phase
 int run_unit_selection(GameState* game_state) {
+    // Check if terminal is large enough for unit selection UI
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+    
+    // Unit selection needs less space than battle, but still needs a decent size
+    int min_width = 70;  // Enough for unit and item lists side by side
+    int min_height = 24; // Enough for headers, lists, and controls
+    
+    if (max_y < min_height || max_x < min_width) {
+        clear();
+        attron(A_BOLD);
+        mvprintw(1, 1, "Terminal window too small for unit selection!");
+        mvprintw(3, 1, "Please resize your terminal to at least %dx%d characters", min_width, min_height);
+        mvprintw(5, 1, "Press any key to return to main menu...");
+        attroff(A_BOLD);
+        refresh();
+        getch();
+        
+        // Return to main menu
+        return 0;
+    }
+    
     UnitSelectionMenu menu;
     
     // Initialize menu

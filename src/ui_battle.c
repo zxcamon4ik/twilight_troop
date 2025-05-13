@@ -510,10 +510,35 @@ void animate_attack(GameState* game_state, Unit* attacker, Unit* target) {
 
 // Run the battle phase
 void run_battle(GameState* game_state) {
-    int cursor_x = 0;
-    int cursor_y = 0;
+    // Check if terminal is large enough for battle UI
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
     
+    // Calculate minimum required size
+    int min_width = GRID_WIDTH * CELL_WIDTH + INFO_PANEL_WIDTH + 5;
+    int min_height = GRID_HEIGHT * CELL_HEIGHT + 2;
+    
+    if (max_y < min_height || max_x < min_width) {
+        clear();
+        attron(A_BOLD);
+        mvprintw(1, 1, "Terminal window too small for battle display!");
+        mvprintw(3, 1, "Please resize your terminal to at least %dx%d characters", min_width, min_height);
+        mvprintw(5, 1, "Press any key to return to main menu...");
+        attroff(A_BOLD);
+        refresh();
+        getch();
+        
+        // Return to main menu
+        game_state->current_phase = PHASE_MAIN_MENU;
+        return;
+    }
+    
+    // Initialize battle UI
     init_battle_ui();
+    
+    // Set up cursor position
+    int cursor_x = GRID_WIDTH / 2;
+    int cursor_y = GRID_HEIGHT / 2;
     
     // Initialize game state for battle
     game_state->current_phase = PHASE_BATTLE;
