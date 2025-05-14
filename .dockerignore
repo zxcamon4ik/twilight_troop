@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+bin/
+obj/
+*.o
+*.a
+*.so
+*.exe
+
+# Documentation
+docs/html/
+docs/latex/
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.swp
+*.swo
+*~
+*.bak
+
+# Docker
+.dockerignore
+docker-compose.yml
+
+# PDF files
+*.pdf
+
+# Logs
+*.log 

@@ -1,7 +1,9 @@
 # Makefile (top-level snippet)
 
+myUID := $(shell id -u)
+
 CC = gcc
-CFLAGS = -Wall -Wextra -g
+CFLAGS = 
 LIBS = -lncurses -lm
 
 SRC_DIR = src
@@ -37,28 +39,39 @@ clean:
 
 # Run the game
 run: $(EXEC)
-	./$(EXEC)
+	TERM=xterm-256color ./$(EXEC)
 
-# Generate documentation using Doxygen (if installed)
-docs: | $(DOC_DIR)
-	@command -v doxygen >/dev/null 2>&1 || { echo "Doxygen not installed. Please install it to generate documentation."; exit 1; }
-	@if [ ! -f Doxyfile ]; then \
-		doxygen -g Doxyfile; \
-		sed -i 's/PROJECT_NAME.*=.*/PROJECT_NAME = "Twilight Troop"/' Doxyfile; \
-		sed -i 's/OUTPUT_DIRECTORY.*=.*/OUTPUT_DIRECTORY = docs/' Doxyfile; \
-		sed -i 's/EXTRACT_ALL.*=.*/EXTRACT_ALL = YES/' Doxyfile; \
-		sed -i 's/RECURSIVE.*=.*/RECURSIVE = YES/' Doxyfile; \
-	fi
-	doxygen Doxyfile
+# Docker commands
+d-run: 
+	@export myUID=${myUID} && \
+	COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 \
+		docker compose build --build-arg SRC=$(SRC_DIR) && \
+		docker compose up --build 
 
-# Generate presentation materials
-presentation: | $(DOC_DIR)
-	@mkdir -p $(DOC_DIR)/presentation
-	@cp README.md $(DOC_DIR)/presentation/
-	@echo "Generating code structure overview..."
-	@find $(SRC_DIR) -type f -name "*.c" -o -name "*.h" | sort > $(DOC_DIR)/presentation/file_list.txt
-	@echo "Generating item list..."
-	@cat data/items.json > $(DOC_DIR)/presentation/items.json
-	@echo "Presentation materials generated in $(DOC_DIR)/presentation/"
+d-purge:
+	@export myUID=${myUID} &&\
+	COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 \
+		docker compose down --volumes --remove-orphans --rmi local --timeout 0 
 
-.PHONY: all clean run docs presentation
+# Shell into the Docker container
+d-shell:
+	@export myUID=${myUID} && \
+	docker compose run --rm -it twilight_troop /bin/bash
+
+# Help target
+help:
+	@echo "Twilight Troop Makefile"
+	@echo ""
+	@echo "Usage:"
+	@echo "  make [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all          Build the game (default target)"
+	@echo "  clean        Remove build artifacts"
+	@echo "  run          Run the game"
+	@echo "  d-run        Build and run in Docker"
+	@echo "  d-purge      Remove Docker containers, volumes, and images"
+	@echo "  d-shell      Open a shell in the Docker container"
+	@echo "  help         Show this help message"
+
+.PHONY: all clean run d-run d-purge d-shell help 
