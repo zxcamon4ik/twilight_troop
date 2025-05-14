@@ -1,0 +1,4 @@
+3
+Tank Axe Armor
+Scout Spear Helmet
+Warrior Sword Shield 

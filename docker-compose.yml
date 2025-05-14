@@ -1,0 +1,16 @@
+services:
+  twilight_troop:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    user: "${myUID-1000}"
+    command: ./start.sh
+    environment:
+      - TERM=xterm-256color
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./data:/wd/data
+      - ./bin:/wd/bin
+      - ./obj:/wd/obj
+      - ./src:/wd/src

@@ -1,74 +1,88 @@
-# Roflands Tactical Battle Game
+Twilight Troop
 
-A turn-based tactical battle game built with ncurses in C.
+A turn-based tactical battle game built with ncurses in C, featuring unit management, combat mechanics, and interactive gameplay.
+Overview
 
-## Features
+Twilight Troop is a tactical battle game where players strategically deploy different unit types with unique equipment combinations. The game features turn-based combat on a grid system using Manhattan distance for movement and attacks.
+Key Features
 
-- **Unit Selection & Load-out**: Choose different unit types and equipment
-- **Interactive Placement**: Place your units on the battlefield before the battle begins
-- **Turn-based Combat**: Move and attack with your units on a grid using Manhattan distance
-- **Save/Load System**: Save and restore your game progress
-- **In-game Help**: Access game instructions anytime with the help screen
-- **Full-screen ncurses UI**: Colorful interface with menus, grid, and animated feedback
+    Tactical Turn-Based Combat - Grid-based movement with Manhattan distance calculations
+    5 Unique Unit Types - Each with different strengths and abilities
+    Equipment System - Customize units with weapons and armor
+    Interactive Placement - Strategic unit positioning before battle
+    ncurses UI - Full-color terminal interface with intuitive controls
+    Save/Load System - Continue your battles later
 
-## How to Build
+Game Mechanics
+Unit Types
 
-To build the game, make sure you have the required libraries installed:
+    Warrior - Balanced unit with medium attack and defense
+    Archer - Ranged unit with high attack but low defense
+    Mage - Area-effect spellcaster with high damage radius
+    Scout - Fast unit with extended movement range
+    Tank - High HP and defense, lower attack power
 
-```
-sudo apt-get install libncurses5-dev
-```
+Equipment
 
-Then compile the game:
+Items modify your units' capabilities:
 
-```
+    Attack - Increases damage dealt
+    Defense - Reduces damage taken
+    Range - Determines attack distance
+    Radius - Controls area-of-effect for attacks
+
+Installation
+Requirements
+
+    GCC compiler
+    ncurses library
+
+Build Instructions
+
+# Install ncurses
+sudo apt-get install libncurses5-dev  # Debian/Ubuntu
+# OR
+sudo pacman -S ncurses                # Arch Linux
+
+# Build the game
 make
-```
 
-## How to Run
-
-After building, run the game with:
-
-```
+# Run the game
 make run
-```
 
-Or directly:
+Controls
 
-```
-./bin/roflands_battle
-```
+    Arrow Keys - Move cursor/unit
+    Enter - Select/Confirm
+    Escape - Cancel/Back
+    H - Help screen
+    S - Save game
+    L - Load game
+    E - End turn
+    Q - Quit game
 
-## Controls
+Project Structure
 
-- **Arrow Keys**: Move cursor
-- **Enter**: Select/Confirm
-- **Escape**: Cancel/Back
-- **H**: Show help screen
-- **S**: Save game
-- **L**: Load game
-- **E**: End turn (during battle)
-- **Q**: Quit game
+twilight_troop/
+├── bin/                # Compiled binaries
+├── data/               # Game data files
+│   ├── army1.txt       # Sample army configuration
+│   ├── army2.txt       # Sample army configuration
+│   ├── items.json      # Equipment definitions
+│   ├── items.txt       # Alternative item format
+│   └── unit_types.txt  # Unit type definitions
+├── docs/               # Documentation
+├── obj/                # Object files
+└── src/                # Source code
+    ├── game_logic.c    # Core game mechanics
+    ├── game_state.h    # Game state definitions
+    ├── main.c          # Entry point
+    ├── ui_*.c/h        # User interface components
+    └── ...
 
-## Game Rules
+Documentation
 
-1. **Unit Selection**:
-   - Each player selects units and equips them with items
-   - Different units have different abilities and stats
+For presentation materials and architectural diagrams, see the docs directory.
+Screenshots
 
-2. **Unit Placement**:
-   - Players place their units on their side of the battlefield
-   - Player 1 uses the top rows, Player 2 uses the bottom rows
-
-3. **Battle**:
-   - Players take turns moving and attacking with their units
-   - Movement and attack ranges use Manhattan distance (|x1-x2| + |y1-y2|)
-   - The game ends when all units of one player are defeated
-
-## Unit Types
-
-- **Warrior**: Balanced unit with medium attack and defense
-- **Archer**: Ranged unit with high attack but low defense
-- **Mage**: Powerful ranged attacker with area effects but fragile
-- **Scout**: Fast unit with high movement range
-- **Tank**: High HP and defense, but lower attack power
+Screenshots coming soon

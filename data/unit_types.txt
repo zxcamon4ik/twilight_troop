@@ -1,0 +1,8 @@
+# Unit type definitions
+# Format: name,max_hp,move_range,attack_range,base_attack,base_defense
+
+Warrior,100,3,1,10,10
+Archer,80,3,3,15,5
+Mage,70,2,4,20,3
+Scout,90,5,1,8,7
+Tank,120,2,1,7,15 

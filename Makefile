@@ -1,7 +1,7 @@
 # Makefile (top-level snippet)
 
 CC = gcc
-CFLAGS = -Wall -Wextra -g
+CFLAGS = 
 LIBS = -lncurses -lm
 
 SRC_DIR = src
